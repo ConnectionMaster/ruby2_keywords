@@ -7,8 +7,10 @@ jobs:
     name: build (${{ matrix.ruby }} / ${{ matrix.os }})
     strategy:
       matrix:
-        ruby: [ '3.0', 2.7, 2.6, 2.5, head ]
+        ruby: [ '3.0', 2.7, 2.6, 2.1, head, truffleruby-head ]
         os: [ ubuntu-latest, macos-latest, windows-latest ]
+        exclude:
+        - { os: windows-latest, ruby: truffleruby-head }
     runs-on: ${{ matrix.os }}
     steps:
     - name: git config
@@ -21,8 +23,14 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
+    - name: Install
+      id: bundle
+      run: |
+        bundle install
+        echo "::set-output name=exec::bundle exec"
+      if: "matrix.ruby <= '2.1'"
     - name: Run test
-      run: rake test
+      run: ${{steps.bundle.outputs.exec}} rake test
     - id: build
       run: |
         rake build
